@@ -1,0 +1,15 @@
+# Logs
+*.log
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# TypeScript
+dist/
+lib/
+
+**/*.d.ts
+**/*.js
+/coverage
