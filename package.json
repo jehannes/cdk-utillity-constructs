@@ -1,6 +1,7 @@
 {
   "version": "0.0.1",
   "name": "cdk-utility-constructs",
+  "stability": "experimental",
   "description": "",
   "author": {
     "name": "Jehannes Zuidema"
@@ -27,28 +28,14 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "lint": "npm run lint:aws && npm run lint:ox",
+    "lint:aws": "awslint",
+    "lint:aws:fix": "awslint --fix",
+    "lint:ox": "oxlint",
+    "lint:ox:fix": "oxlint --fix",
     "clean": "rm -rf dist/ lib/ .jsii *.tgz",
     "pack": "npm pack",
     "prepublishOnly": "npm run build"
-  },
-  "devDependencies": {
-    "@types/jest": "^30.0.0",
-    "@types/node": "24.3.0",
-    "@typescript/native-preview": "^7.0.0-dev.20250827.1",
-    "aws-cdk": "^2.1026.0",
-    "aws-cdk-lib": "2.212.0",
-    "constructs": "10.4.2",
-    "jest": "^30.0.5",
-    "jsii": "^5.9.2",
-    "jsii-pacmak": "^1.113.0",
-    "ts-jest": "^29.4.1",
-    "ts-node": "^10.9.2",
-    "typescript": "~5.9.2",
-    "uuid": "^11.1.0"
-  },
-  "peerDependencies": {
-    "aws-cdk-lib": "^2.212.0",
-    "constructs": "^10.4.2"
   },
   "jsii": {
     "outdir": "dist",
@@ -64,5 +51,33 @@
       "test/**/*"
     ]
   },
-  "stability": "experimental"
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "24.3.0",
+    "@typescript/native-preview": "^7.0.0-dev.20250827.1",
+    "aws-cdk": "^2.1026.0",
+    "aws-cdk-lib": "2.212.0",
+    "awslint": "^2.212.0-alpha.0",
+    "constructs": "10.4.2",
+    "jest": "^30.0.5",
+    "jsii": "^5.9.2",
+    "jsii-pacmak": "^1.113.0",
+    "oxlint": "^1.13.0",
+    "ts-jest": "^29.4.1",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.9.2",
+    "uuid": "^11.1.0"
+  },
+  "peerDependencies": {
+    "aws-cdk-lib": "^2.212.0",
+    "constructs": "^10.4.2"
+  },
+  "overrides": {
+    "awslint@2.212.0-alpha.0": {
+      "change-case@4.1.2": "^5.4.4"
+    },
+    "ts-jest": {
+      "glob@7.2.3": "^9.3.5"
+    }
+  }
 }
