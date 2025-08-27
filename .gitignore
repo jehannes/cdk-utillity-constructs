@@ -8,8 +8,13 @@ yarn-error.log
 
 # TypeScript
 dist/
-lib/
+
 
 **/*.d.ts
 **/*.js
+!**/*.config.js
 /coverage
+*.tsbuildinfo
+*.tgz
+
+.jsii

@@ -1,22 +1,27 @@
 import { Template, Match } from 'aws-cdk-lib/assertions';
-import * as cdk from 'aws-cdk-lib';
-import * as s3 from 'aws-cdk-lib/aws-s3';
-import * as iam from 'aws-cdk-lib/aws-iam';
-import * as ssm from 'aws-cdk-lib/aws-ssm';
-import { S3Backup, BackupType, S3BackupProps } from '../src/s3backup/s3Backup';
+import {
+  aws_ssm as ssm,
+  aws_iam as iam,
+  aws_s3 as s3,
+  App,
+  Stack,
+  RemovalPolicy,
+  Duration
+} from 'aws-cdk-lib';
+import { S3Backup, BackupType, S3BackupProps } from '../lib/s3-backup/s3-backup';
 
 describe('S3Backup Construct', () => {
-  let app: cdk.App;
-  let stack: cdk.Stack;
+  let app: App;
+  let stack: Stack;
   let mainBucket: s3.IBucket;
 
   beforeEach(() => {
-    app = new cdk.App();
-    stack = new cdk.Stack(app, 'TestStack');
+    app = new App();
+    stack = new Stack(app, 'TestStack');
     
     // Create a main bucket for testing
     mainBucket = new s3.Bucket(stack, 'MainBucket', {
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      removalPolicy: RemovalPolicy.DESTROY,
     });
   });
 
@@ -155,7 +160,7 @@ describe('S3Backup Construct', () => {
         centralBackupBucket: mainBucket,
         dataSyncProps: {
           dataSyncTargetFolder: 'test-folder',
-          dataSyncInterval: cdk.Duration.hours(6),
+          dataSyncInterval: Duration.hours(6),
         },
       };
 
@@ -562,7 +567,7 @@ describe('S3Backup Construct', () => {
             scheduleExpression: 'cron(0 2 * * ? *)',
             status: 'ENABLED'
           },
-          dataSyncInterval: cdk.Duration.hours(6)
+          dataSyncInterval: Duration.hours(6)
         }
       };
 
@@ -591,7 +596,7 @@ describe('S3Backup Construct', () => {
         backupType: BackupType.DATA_SYNC,
         centralBackupBucket: mainBucket,
         dataSyncProps: {
-          dataSyncInterval: cdk.Duration.minutes(30)
+          dataSyncInterval: Duration.minutes(30)
         }
       };
 
@@ -607,7 +612,7 @@ describe('S3Backup Construct', () => {
         backupType: BackupType.DATA_SYNC,
         centralBackupBucket: mainBucket,
         dataSyncProps: {
-          dataSyncInterval: cdk.Duration.hours(1)
+          dataSyncInterval: Duration.hours(1)
         }
       };
 
@@ -808,8 +813,8 @@ describe('S3Backup Construct', () => {
 
     it('throws error when no target bucket is available (mocked scenario)', () => {
       // Create a test stack for this specific test with environment
-      const testApp = new cdk.App();
-      const testStack = new cdk.Stack(testApp, 'MockTestStack', {
+      const testApp = new App();
+      const testStack = new Stack(testApp, 'MockTestStack', {
         env: {
           account: '123456789012',
           region: 'us-east-1'
@@ -928,7 +933,7 @@ describe('S3Backup Construct', () => {
       s3Backup.addLifecycleRule({
         id: 'TestRule',
         enabled: true,
-        expiration: cdk.Duration.days(365)
+        expiration: Duration.days(365)
       });
 
       // Assert
@@ -994,7 +999,7 @@ describe('S3Backup Construct', () => {
         s3Backup.addLifecycleRule({
           id: 'TestRule',
           enabled: true,
-          expiration: cdk.Duration.days(365)
+          expiration: Duration.days(365)
         });
       }).not.toThrow();
     });
@@ -1130,10 +1135,10 @@ describe('S3Backup Construct', () => {
   describe('Multiple Instances', () => {
     it('can create multiple STANDALONE instances in the same stack', () => {
       // Use fresh stack to avoid interference
-      const testApp = new cdk.App();
-      const testStack = new cdk.Stack(testApp, 'MultipleStandaloneStack');
+      const testApp = new App();
+      const testStack = new Stack(testApp, 'MultipleStandaloneStack');
       const testMainBucket = new s3.Bucket(testStack, 'TestMainBucket', {
-        removalPolicy: cdk.RemovalPolicy.DESTROY,
+        removalPolicy: RemovalPolicy.DESTROY,
       });
       
       // Arrange

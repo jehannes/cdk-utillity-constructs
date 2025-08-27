@@ -2,10 +2,13 @@
   "version": "0.0.1",
   "name": "cdk-utility-constructs",
   "description": "",
+  "author": {
+    "name": "Jehannes Zuidema"
+  },
   "license": "Apache-2.0",
   "main": "dist/index.js",
   "files": [
-    "dist/*",
+    "dist/**/*",
     ".jsii"
   ],
   "repository": {
@@ -20,27 +23,46 @@
     "awscdk"
   ],
   "scripts": {
-    "build": "./build.sh",
+    "build": "bash ./build.sh",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "clean": "rm -rf dist/ lib/ .jsii *.tgz",
+    "pack": "npm pack",
+    "prepublishOnly": "npm run build"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/node": "24.3.0",
-    "@typescript/native-preview": "^7.0.0-dev.20250815.1",
-    "aws-cdk": "2.1025.0",
-    "aws-cdk-lib": "^2.211.0",
-    "constructs": "^10.4.2",
+    "@typescript/native-preview": "^7.0.0-dev.20250827.1",
+    "aws-cdk": "^2.1026.0",
+    "aws-cdk-lib": "2.212.0",
+    "constructs": "10.4.2",
     "jest": "^30.0.5",
-    "jsii": "5.9.2",
+    "jsii": "^5.9.2",
+    "jsii-pacmak": "^1.113.0",
     "ts-jest": "^29.4.1",
     "ts-node": "^10.9.2",
     "typescript": "~5.9.2",
     "uuid": "^11.1.0"
   },
   "peerDependencies": {
-    "aws-cdk-lib": "^2.211.0",
+    "aws-cdk-lib": "^2.212.0",
     "constructs": "^10.4.2"
-  }
+  },
+  "jsii": {
+    "outdir": "dist",
+    "tsconfig": "tsconfig.json",
+    "validateTsconfig": "strict",
+    "targets": {
+      "python": {
+        "distName": "cdk-utility-constructs",
+        "module": "cdk_utility_constructs"
+      }
+    },
+    "excludeTypescript": [
+      "test/**/*"
+    ]
+  },
+  "stability": "experimental"
 }

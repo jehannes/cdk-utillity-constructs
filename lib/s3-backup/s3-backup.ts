@@ -39,134 +39,195 @@ export enum BackupType {
   DIRECT_UPLOAD = "direct_upload",
 }
 
+/**
+ * Properties for data synchronization configuration
+ */
 export interface DataSyncProps {
   /**
-   * Optional: Target folder for data synchronization.
+   * Optional: Target folder for data synchronization
+   * 
+   * @default - no specific target folder
    */
-  dataSyncTargetFolder?: string;
+  readonly dataSyncTargetFolder?: string;
+  
   /**
-   * Optional: Interval for data synchronization.
+   * Optional: Interval for data synchronization
+   * 
+   * @default - no automatic interval
    */
-  dataSyncInterval?: cdk.Duration;
-  /*
-   * Optional: Schedule for the DataSync task.
+  readonly dataSyncInterval?: cdk.Duration;
+  
+  /**
+   * Optional: Schedule for the DataSync task
    * If provided, the DataSync task will be created with this schedule.
    * This is only applicable if the backupType is DATA_SYNC.
+   * 
+   * @default - no schedule
    */
-  dataSyncSchedule?: datasync.CfnTask.TaskScheduleProperty;
+  readonly dataSyncSchedule?: datasync.CfnTask.TaskScheduleProperty;
 }
 
+/**
+ * Properties for S3 bucket configuration
+ */
 export interface BucketProps {
   /**
-   * Optional: Name of the S3 bucket for backups.
+   * Optional: Name of the S3 bucket for backups
    * If not provided, a unique bucket name will be generated.
+   * 
+   * @default - a unique bucket name will be generated
    */
-  bucketName?: string; // maybe require this?
+  readonly bucketName?: string;
+  
   /**
-   * Optional: Whether the stack is a standalone backup bucket.
-   * If true, the bucket will be created without any additional configurations.
+   * Optional: Folder path for direct upload configurations
+   * This is used when the backup type is DIRECT_UPLOAD.
+   * 
+   * @default - no specific folder
    */
-  directUploadFolder?: string;
+  readonly directUploadFolder?: string;
+  
   /**
-   * Optional: Indicates if lifecycle rules should be applied to the bucket.
-   * If true, lifecycle rules will be added to the bucket.
+   * Optional: Whether to skip applying default lifecycle rules to the bucket
+   * If true, no lifecycle rules will be added to the bucket.
    * This is intended to make configuration easier by allowing users to opt-out of default lifecycle rules.
    *
    * @default false
    */
-  noLifecycleRules?: boolean;
+  readonly noLifecycleRules?: boolean;
 }
 
+/**
+ * Configuration for CloudFormation outputs
+ */
 export interface OutputConfig {
   /**
-   * Whether to create bucket-related outputs.
+   * Optional: Whether to create bucket-related outputs
+   * 
    * @default true
    */
-  includeBucketOutputs?: boolean;
+  readonly includeBucketOutputs?: boolean;
+  
   /**
-   * Whether to create DataSync-related outputs.
+   * Optional: Whether to create DataSync-related outputs
+   * 
    * @default true
    */
-  includeDataSyncOutputs?: boolean;
+  readonly includeDataSyncOutputs?: boolean;
+  
   /**
-   * Whether to create IAM user outputs.
+   * Optional: Whether to create IAM user outputs
+   * 
    * @default true
    */
-  includeUserOutputs?: boolean;
+  readonly includeUserOutputs?: boolean;
+  
   /**
-   * Whether to create access key outputs (includes sensitive access keys).
+   * Optional: Whether to create access key outputs (includes sensitive access keys)
    * Note: This is separate from includeUserOutputs for security reasons.
+   * 
    * @default false
    */
-  includeAccessKeyOutputs?: boolean;
+  readonly includeAccessKeyOutputs?: boolean;
+  
   /**
-   * Optional prefix for all output IDs to avoid conflicts.
-   * @default ""
+   * Optional: Prefix for all output IDs to avoid conflicts
+   * 
+   * @default - no prefix
    */
-  outputPrefix?: string;
+  readonly outputPrefix?: string;
 }
 
-export interface iamUserProps {
+/**
+ * Properties for IAM user configuration
+ */
+export interface IamUserProps {
   /**
-   * Optional: Name of the IAM user for accessing the backup bucket.
+   * Optional: Name of the IAM user for accessing the backup bucket
    * If not provided, a default user name will be used.
+   * 
+   * @default - a default user name will be generated
    */
-  userName?: string;
+  readonly userName?: string;
+  
   /**
-   * Optional: Serial number for the access key.
+   * Optional: Serial number for the access key
    * Can be incremented to rotate the access key.
    * 
    * @default 0
    */
-  keySerial?: number;
+  readonly keySerial?: number;
+  
   /**
-   * Optional: Whether to create an access key for the backup user.
+   * Optional: Whether to create an access key for the backup user
    * If true, an access key will be created for the IAM user.
+   * 
    * @default true
    */
-  createAccessKey?: boolean;
+  readonly createAccessKey?: boolean;
+  
   /**
-   * Optional: Whether to grant permissions to list all buckets.
+   * Optional: Whether to grant permissions to list all buckets
    * If true, the IAM user will be granted permissions to list all buckets.
    * 
    * @default false
    */
-  listAllBuckets?: boolean;
+  readonly listAllBuckets?: boolean;
 }
 
-export interface S3BackupProps extends StackProps {
+/**
+ * Properties for the S3Backup construct
+ */
+export interface S3BackupProps {
   /**
-   * The type of backup to create.
+   * The type of backup to create
    */
-  backupType: BackupType;
+  readonly backupType: BackupType;
+  
   /**
-   * Optional: Properties for the IAM user.
+   * Optional: Properties for the IAM user
    *
-   * @default {}
+   * @default - default IAM user configuration will be used
    */
-  iamUserProps?: iamUserProps;
+  readonly iamUserProps?: IamUserProps;
+  
   /**
-   * Optional: Properties for data synchronization.
+   * Optional: Properties for data synchronization
    * 
+   * @default - no data synchronization
    */
-  dataSyncProps?: DataSyncProps;
+  readonly dataSyncProps?: DataSyncProps;
+  
   /**
-   * Optional: Properties for the created S3 bucket.
+   * Optional: Properties for the created S3 bucket
+   * 
+   * @default - default bucket configuration will be used
    */
-  bucketProps?: BucketProps;
+  readonly bucketProps?: BucketProps;
+  
   /**
-   * Optional: The central backup bucket to use.
+   * Optional: The central backup bucket to use
+   * Required for DATA_SYNC and DIRECT_UPLOAD backup types.
+   * 
+   * @default - no central backup bucket
    */
-  centralBackupBucket?: s3.IBucket;
+  readonly centralBackupBucket?: s3.IBucket;
+  
   /**
-   * Optional: An SSM parameter with the ARN of the central backup bucket.
+   * Optional: An SSM parameter with the ARN of the central backup bucket
+   * Alternative to centralBackupBucket for dynamic bucket resolution.
+   * 
+   * @default - no SSM parameter
    */
-  centralBackupParameter?: ssm.IParameter;
+  readonly centralBackupParameter?: ssm.IParameter;
+  
   /**
-   * Optional: Configuration for CloudFormation outputs.
+   * Optional: Configuration for CloudFormation outputs
    * If not provided, all relevant outputs will be created except access keys.
+   * 
+   * @default - all outputs except access keys will be created
    */
-  outputConfig?: OutputConfig;
+  readonly outputConfig?: OutputConfig;
 }
 
 export class S3Backup extends Construct {
@@ -184,8 +245,10 @@ export class S3Backup extends Construct {
     checkProps(props); // verifies
     
     // === Property Initialization ===
-    props.iamUserProps = props.iamUserProps ?? {};
-    props.iamUserProps.createAccessKey = props.iamUserProps.createAccessKey ?? true;
+    const iamUserProps = {
+      ...props.iamUserProps,
+      createAccessKey: props.iamUserProps?.createAccessKey ?? true
+    };
 
     // === Bucket Creation Phase ===
     // Create backup bucket for STANDALONE and DATA_SYNC types
@@ -240,7 +303,7 @@ export class S3Backup extends Construct {
       this,
       targetBucket,
       folderAccess,
-      props?.iamUserProps,
+      iamUserProps,
       id
     );
     this.user = userResult.user;
@@ -719,7 +782,7 @@ function createBackupUser(
   construct: Construct,
   bucket: s3.IBucket,
   folderName?: string, //for direct upload
-  props?: iamUserProps,
+  props?: IamUserProps,
   uniqueId?: string
 ): { user: iam.User; accessKey: iam.CfnAccessKey | undefined } {
   // Create an IAM user to access the backup bucket
