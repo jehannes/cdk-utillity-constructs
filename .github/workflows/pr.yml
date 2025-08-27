@@ -96,15 +96,18 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.VERSION_NAME }}
-          target_commitish: ${{ github.event.pull_request.head.sha }}
+          target_commitish: ${{ github.head_ref}}
           name: "Beta Release ${{ env.VERSION_NAME }}"
           body: >-
             Automated beta release from PR #${{ github.event.number }}
+            
             **Source Branch:** `${{ github.head_ref }}`
+
             **Install using:** `npm install https://github.com/${{ github.repository }}/releases/download/${{ env.VERSION_NAME }}/cdk-utility-constructs-0.0.1.tgz`
           prerelease: true
+          make_latest: false
           files: |
-            *.tgz
+            !*.tgz
             dist/**/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
