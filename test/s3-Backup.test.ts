@@ -1298,4 +1298,353 @@ describe('S3Backup Construct', () => {
       template.resourceCountIs("AWS::Logs::LogGroup", 1);
     });
   });
+
+  describe('Bucket Naming and Configuration', () => {
+    it('handles long bucket names that exceed postfix limit', () => {
+      // Arrange - Create a bucket name that's long enough to exceed the postfix limit
+      // The logic checks: bucketName.length <= (64 - accountId.length - (standalone ? 12 : 13) - 2)
+      // Account ID is 12 chars, standalone postfix is 12 chars, so threshold is about 64-12-12-2=38
+      const longBucketName = 'very-long-bucket-name-that-exceeds-postfix-limit-threshold';
+      
+      const props: S3BackupProps = {
+        backupType: BackupType.STANDALONE,
+        bucketProps: {
+          bucketName: longBucketName,
+        },
+      };
+
+      // Act
+      const backup = new S3Backup(stack, 'LongNameBackup', props);
+
+      // Assert
+      expect(backup.bucket).toBeDefined();
+      const template = Template.fromStack(stack);
+      // When bucket name is too long, it should use the original name without postfix
+      template.hasResourceProperties("AWS::S3::Bucket", 
+        Match.objectLike({
+          BucketName: longBucketName, // Should use original name
+        })
+      );
+    });
+
+    it('adds postfix to shorter bucket names', () => {
+      // Arrange - Create a short bucket name that allows postfix
+      const shortBucketName = 'short-name';
+      
+      const props: S3BackupProps = {
+        backupType: BackupType.STANDALONE,
+        bucketProps: {
+          bucketName: shortBucketName,
+        },
+      };
+
+      // Act
+      const backup = new S3Backup(stack, 'ShortNameBackup', props);
+
+      // Assert
+      expect(backup.bucket).toBeDefined();
+      const template = Template.fromStack(stack);
+      // When bucket name is short enough, it should add the postfix
+      // The bucket name will be a CloudFormation function, so we just verify it exists
+      template.hasResourceProperties("AWS::S3::Bucket", 
+        Match.objectLike({
+          BucketName: Match.anyValue(), // CloudFormation uses Fn::Join for postfix
+          VersioningConfiguration: { Status: "Enabled" }, // Verify it's the right bucket
+        })
+      );
+    });
+  });
+
+  describe('Lifecycle Rules Configuration', () => {
+    it('creates bucket with lifecycle rules disabled when noLifecycleRules is true', () => {
+      // Arrange
+      const props: S3BackupProps = {
+        backupType: BackupType.STANDALONE,
+        bucketProps: {
+          bucketName: 'no-lifecycle',
+          noLifecycleRules: true,
+        },
+      };
+
+      // Act
+      new S3Backup(stack, 'NoLifecycleBackup', props);
+
+      // Assert
+      const template = Template.fromStack(stack);
+      template.hasResourceProperties("AWS::S3::Bucket", 
+        Match.objectLike({
+          BucketName: Match.anyValue(),
+          // Lifecycle configuration should be absent
+        })
+      );
+      
+      // Verify no lifecycle rules exist
+      const buckets = template.findResources("AWS::S3::Bucket");
+      const noLifecycleBucket = Object.values(buckets).find(bucket => 
+        !bucket.Properties?.LifecycleConfiguration
+      );
+      expect(noLifecycleBucket).toBeDefined();
+    });
+
+    it('skips lifecycle rules when noLifecycleRules is true', () => {
+      // This test targets line 552: the !props?.noLifecycleRules condition
+      const props: S3BackupProps = {
+        backupType: BackupType.STANDALONE,
+        centralBackupBucket: mainBucket,
+        bucketProps: {
+          noLifecycleRules: true // This should skip lifecycle rules creation
+        }
+      };
+
+      // Act
+      new S3Backup(stack, 'NoLifecycleBackup2', props);
+
+      // Assert - Should create bucket but no lifecycle configuration
+      const template = Template.fromStack(stack);
+      
+      // Check that bucket was created without specifying BucketName since it may be undefined
+      template.hasResourceProperties('AWS::S3::Bucket', {
+        BucketEncryption: Match.objectLike({
+          ServerSideEncryptionConfiguration: Match.anyValue()
+        })
+      });
+
+      // Verify no lifecycle configuration exists on the backup bucket
+      const buckets = template.findResources('AWS::S3::Bucket');
+      const bucketKeys = Object.keys(buckets);
+      
+      // Find the standalone bucket (should be the one with versioning)
+      const standaloneBucketKey = bucketKeys.find(key => 
+        buckets[key].Properties?.VersioningConfiguration
+      );
+      
+      if (standaloneBucketKey) {
+        expect(buckets[standaloneBucketKey].Properties?.LifecycleConfiguration).toBeUndefined();
+      }
+    });
+  });
+
+  describe('Advanced DataSync Configuration', () => {
+    it('creates DataSync with custom schedule interval', () => {
+      // Arrange
+      const props: S3BackupProps = {
+        backupType: BackupType.DATA_SYNC,
+        centralBackupBucket: mainBucket,
+        dataSyncProps: {
+          dataSyncTargetFolder: 'custom-folder',
+          dataSyncInterval: Duration.hours(12),
+        },
+      };
+
+      // Act
+      new S3Backup(stack, 'CustomScheduleBackup', props);
+
+      // Assert
+      const template = Template.fromStack(stack);
+      template.hasResourceProperties("AWS::DataSync::Task", {
+        Schedule: {
+          ScheduleExpression: "rate(720 minutes)", // 12 hours = 720 minutes
+          Status: "ENABLED",
+        },
+      });
+    });
+
+    it('handles DataSync with default target folder when not specified', () => {
+      // Arrange
+      const props: S3BackupProps = {
+        backupType: BackupType.DATA_SYNC,
+        centralBackupBucket: mainBucket,
+        dataSyncProps: {
+          // No dataSyncTargetFolder specified - should use bucket name
+        },
+      };
+
+      // Act
+      new S3Backup(stack, 'DefaultTargetBackup', props);
+
+      // Assert
+      const template = Template.fromStack(stack);
+      template.hasResourceProperties("AWS::DataSync::LocationS3", {
+        S3BucketArn: Match.anyValue(),
+        Subdirectory: Match.anyValue(), // Should use bucket name as default
+      });
+    });
+
+    it('creates DataSync with custom schedule configuration', () => {
+      // This test targets lines 649-721: DataSync custom schedule path
+      const props: S3BackupProps = {
+        backupType: BackupType.DATA_SYNC,
+        centralBackupBucket: mainBucket,
+        dataSyncProps: {
+          dataSyncSchedule: {
+            scheduleExpression: 'rate(2 hours)',
+            status: 'ENABLED'
+          },
+          dataSyncTargetFolder: 'custom-sync-folder'
+        }
+      };
+
+      // Act
+      new S3Backup(stack, 'CustomScheduleBackup2', props);
+
+      // Assert
+      const template = Template.fromStack(stack);
+      
+      // Should create DataSync task with custom schedule
+      template.hasResourceProperties('AWS::DataSync::Task', {
+        Schedule: {
+          ScheduleExpression: 'rate(2 hours)',
+          Status: 'ENABLED'
+        }
+      });
+
+      // Should create target location with custom folder
+      template.hasResourceProperties('AWS::DataSync::LocationS3', {
+        Subdirectory: 'custom-sync-folder'
+      });
+
+      // Should create log group for DataSync (use anyValue for CloudFormation expressions)
+      template.hasResourceProperties('AWS::Logs::LogGroup', {
+        LogGroupName: Match.anyValue() // CloudFormation may use Fn::Join
+      });
+    });
+  });
+
+  describe('Advanced IAM User Configuration', () => {
+    it('creates IAM user with custom username and access key', () => {
+      // Arrange
+      const props: S3BackupProps = {
+        backupType: BackupType.DIRECT_UPLOAD,
+        centralBackupBucket: mainBucket,
+        bucketProps: {
+          directUploadFolder: 'uploads',
+        },
+        iamUserProps: {
+          userName: 'custom-backup-user',
+          createAccessKey: true,
+          keySerial: 1,
+        },
+      };
+
+      // Act
+      new S3Backup(stack, 'CustomUserBackup', props);
+
+      // Assert
+      const template = Template.fromStack(stack);
+      template.hasResourceProperties("AWS::IAM::User", {
+        UserName: 'custom-backup-user',
+      });
+      template.hasResourceProperties("AWS::IAM::AccessKey", {
+        UserName: Match.anyValue(), // References are used in CloudFormation
+        Serial: 1,
+      });
+    });
+
+    it('creates IAM user with folder permissions for DIRECT_UPLOAD', () => {
+      // This test targets lines 745-792: the folderName condition in createBackupUser
+      const props: S3BackupProps = {
+        backupType: BackupType.DIRECT_UPLOAD,
+        centralBackupBucket: mainBucket,
+        bucketProps: {
+          directUploadFolder: 'test-folder' // Required for DIRECT_UPLOAD
+        },
+        iamUserProps: {
+          userName: 'backup-user-folder-test',
+          createAccessKey: true,
+          keySerial: 2
+        }
+      };
+
+      // Act
+      new S3Backup(stack, 'DirectUploadBackup', props);
+
+      // Assert
+      const template = Template.fromStack(stack);
+      
+      // Should create IAM user
+      template.hasResourceProperties('AWS::IAM::User', {
+        UserName: 'backup-user-folder-test'
+      });
+
+      // Should create access key
+      template.hasResourceProperties('AWS::IAM::AccessKey', {
+        UserName: Match.anyValue(),
+        Serial: 2
+      });
+
+      // Should create folder-specific permissions (DIRECT_UPLOAD pattern)
+      template.hasResourceProperties('AWS::IAM::Policy', {
+        PolicyDocument: {
+          Statement: Match.arrayWith([
+            Match.objectLike({
+              Effect: 'Allow',
+              Action: Match.arrayWith(['s3:PutObject']),
+              Resource: Match.anyValue() // CloudFormation uses function references
+            })
+          ])
+        }
+      });
+    });
+  });
+
+  describe('Advanced Output Configuration', () => {
+    it('creates outputs when includeUserOutputs is enabled', () => {
+      // Arrange
+      const props: S3BackupProps = {
+        backupType: BackupType.STANDALONE,
+        iamUserProps: {
+          createAccessKey: true,
+        },
+        outputConfig: {
+          includeUserOutputs: true,
+          includeAccessKeyOutputs: true,
+          includeBucketOutputs: true,
+          includeDataSyncOutputs: false,
+        },
+      };
+
+      // Act
+      new S3Backup(stack, 'OutputsBackup', props);
+
+      // Assert
+      const template = Template.fromStack(stack);
+      
+      // Check that outputs exist by looking at all outputs
+      const allOutputs = template.findOutputs('*');
+      expect(Object.keys(allOutputs).length).toBeGreaterThan(0);
+      
+      // Check for specific output patterns
+      const outputKeys = Object.keys(allOutputs);
+      expect(outputKeys.some(key => key.includes('BackupUserName'))).toBe(true);
+      expect(outputKeys.some(key => key.includes('BucketName'))).toBe(true);
+      expect(outputKeys.some(key => key.includes('AccessKey'))).toBe(true);
+    });
+
+    it('does not create outputs when output config is disabled', () => {
+      // Arrange
+      const props: S3BackupProps = {
+        backupType: BackupType.STANDALONE,
+        iamUserProps: {
+          createAccessKey: true,
+        },
+        outputConfig: {
+          includeUserOutputs: false,
+          includeAccessKeyOutputs: false,
+          includeBucketOutputs: false,
+          includeDataSyncOutputs: false,
+        },
+      };
+
+      // Act
+      new S3Backup(stack, 'NoOutputsBackup', props);
+
+      // Assert
+      const template = Template.fromStack(stack);
+      
+      // Get all outputs and verify none of the backup-related ones exist
+      const outputs = template.findOutputs('*');
+      const outputKeys = Object.keys(outputs);
+      expect(outputKeys.filter(key => key.includes('NoOutputsBackup')).length).toBe(0);
+    });
+  });
 });

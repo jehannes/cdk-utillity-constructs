@@ -6,7 +6,6 @@ import {
   aws_datasync as datasync,
   aws_logs as logs,
   CfnOutput,
-  StackProps,
   Duration
 } from "aws-cdk-lib";
 import { Construct } from "constructs";
@@ -257,8 +256,8 @@ export class S3Backup extends Construct {
         ? createBackupBucket(
             this,
             props.backupType === BackupType.STANDALONE,
-            props.bucketProps,
-            id
+            id,
+            props.bucketProps
           )
         : undefined;
 
@@ -302,9 +301,9 @@ export class S3Backup extends Construct {
     const userResult = createBackupUser(
       this,
       targetBucket,
+      id,
       folderAccess,
-      iamUserProps,
-      id
+      iamUserProps
     );
     this.user = userResult.user;
     this.accessKey = userResult.accessKey;
@@ -532,8 +531,8 @@ function checkProps(props: S3BackupProps) {
 function createBackupBucket(
   construct: Construct,
   standalone: boolean,
-  props?: BucketProps,
-  uniqueId?: string
+  uniqueId: string,
+  props?: BucketProps
 ): s3.Bucket {
 
   // === Bucket Naming Strategy ===
@@ -550,7 +549,7 @@ function createBackupBucket(
   }
 
   // Create an S3 bucket for backups
-  const bucket = new s3.Bucket(construct, `${standalone ? "BackupBucket" : "IngestBucket"}${uniqueId ? `-${uniqueId}` : ''}`, {
+  const bucket = new s3.Bucket(construct, `${standalone ? "BackupBucket" : "IngestBucket"}-${uniqueId}`, {
     bucketName: bucketName,
     removalPolicy: standalone ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
     autoDeleteObjects: !standalone,
@@ -638,7 +637,7 @@ function createDataSync(
   originBucket: s3.Bucket,
   targetBucket: s3.IBucket,
   props: DataSyncProps,
-  uniqueId?: string
+  uniqueId: string
 ): {
   dataSyncTask: datasync.CfnTask;
   dataSyncRole: iam.Role;
@@ -647,13 +646,13 @@ function createDataSync(
   const targetFolder = props.dataSyncTargetFolder || originBucket.bucketName;
 
   // Create CloudWatch Log Group for DataSync task logging
-  const logGroup = new logs.LogGroup(construct, `DataSyncLogGroup${uniqueId ? `-${uniqueId}` : ''}`, {
-    logGroupName: `/aws/datasync/task/${originBucket.bucketName}-to-${targetBucket.bucketName}${uniqueId ? `-${uniqueId}` : ''}`,
+  const logGroup = new logs.LogGroup(construct, `DataSyncLogGroup-${uniqueId}`, {
+    logGroupName: `/aws/datasync/task/${originBucket.bucketName}-to-${targetBucket.bucketName}-${uniqueId}`,
     retention: logs.RetentionDays.ONE_MONTH,
     removalPolicy: cdk.RemovalPolicy.DESTROY,
   });
 
-  const dataSyncRole = new iam.Role(construct, `DataSyncRole${uniqueId ? `-${uniqueId}` : ''}`, {
+  const dataSyncRole = new iam.Role(construct, `DataSyncRole-${uniqueId}`, {
     assumedBy: new iam.ServicePrincipal("datasync.amazonaws.com", {
       conditions: {
         ArnLike: {
@@ -711,7 +710,7 @@ function createDataSync(
   );
 
   // Create source S3 location for DataSync
-  const sourceS3Location = new datasync.CfnLocationS3(construct, `SourceS3Location${uniqueId ? `-${uniqueId}` : ''}`, {
+  const sourceS3Location = new datasync.CfnLocationS3(construct, `SourceS3Location-${uniqueId}`, {
     s3BucketArn: originBucket.bucketArn,
     s3Config: {
       bucketAccessRoleArn: dataSyncRole.roleArn,
@@ -719,7 +718,7 @@ function createDataSync(
   });
 
   // Create the target S3 location for DataSync, to be able to define the s3 subdirectory
-  const targetS3location = new datasync.CfnLocationS3(construct, `TargetS3Location${uniqueId ? `-${uniqueId}` : ''}`, {
+  const targetS3location = new datasync.CfnLocationS3(construct, `TargetS3Location-${uniqueId}`, {
     s3BucketArn: targetBucket.bucketArn,
     subdirectory: targetFolder,
     s3Config: {
@@ -743,7 +742,7 @@ function createDataSync(
     };
   }
 
-  const dataSyncTask = new datasync.CfnTask(construct, `DataSyncTask${uniqueId ? `-${uniqueId}` : ''}`, {
+  const dataSyncTask = new datasync.CfnTask(construct, `DataSyncTask-${uniqueId}`, {
     sourceLocationArn: sourceS3Location.attrLocationArn,
     destinationLocationArn: targetS3location.attrLocationArn,
     name: `transfer ${originBucket.bucketName} to ${targetBucket.bucketName}/${targetFolder}`,
@@ -781,16 +780,16 @@ function createDataSync(
 function createBackupUser(
   construct: Construct,
   bucket: s3.IBucket,
+  uniqueId: string,
   folderName?: string, //for direct upload
-  props?: IamUserProps,
-  uniqueId?: string
+  props?: IamUserProps
 ): { user: iam.User; accessKey: iam.CfnAccessKey | undefined } {
   // Create an IAM user to access the backup bucket
-  const user = new iam.User(construct, `BackupUser${uniqueId ? `-${uniqueId}` : ''}`, {
-    userName: props?.userName || `backup-user-${bucket.bucketName}${uniqueId ? `-${uniqueId}` : ''}`,
+  const user = new iam.User(construct, `BackupUser-${uniqueId}`, {
+    userName: props?.userName || `backup-user-${bucket.bucketName}-${uniqueId}`,
   });
 
-  const accessKey = props?.createAccessKey ? new iam.CfnAccessKey(construct, `BackupUserAccessKey${uniqueId ? `-${uniqueId}` : ''}`, {
+  const accessKey = props?.createAccessKey ? new iam.CfnAccessKey(construct, `BackupUserAccessKey-${uniqueId}`, {
     userName: user.userName,
     serial: props?.keySerial, // Serial number for the access key, can be used for rotation
   }) : undefined;

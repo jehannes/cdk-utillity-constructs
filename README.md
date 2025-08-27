@@ -52,12 +52,53 @@ new S3Backup(this, 'DataSyncBackup', {
 - Configurable CloudFormation outputs
 - Support for encryption and versioning
 
+### CloudFrontForLambda
+
+A construct that creates a CloudFront distribution with a Lambda Function URL as the origin, providing global CDN capabilities for serverless applications.
+
+#### Basic Usage
+
+```typescript
+import { CloudFrontForLambda } from 'cdk-utility-constructs';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+
+const myFunction = new lambda.Function(this, 'MyFunction', {
+  runtime: lambda.Runtime.NODEJS_20_X,
+  handler: 'index.handler',
+  code: lambda.Code.fromAsset('lambda'),
+});
+
+// Basic CloudFront distribution with function URL
+new CloudFrontForLambda(this, 'MyDistribution', {
+  lambdaFunction: myFunction,
+});
+
+// With custom domain
+new CloudFrontForLambda(this, 'ApiDistribution', {
+  lambdaFunction: myFunction,
+  domainName: 'api',
+  hostedZoneDomain: 'example.com', // Creates api.example.com
+});
+```
+
+#### Features
+
+- Automatic Lambda Function URL creation and management
+- Custom domain support with Route53 integration
+- SSL/TLS certificate management with AWS Certificate Manager
+- Subdomain support for multi-environment deployments
+- Optimized caching policies for serverless applications
+- Support for multiple deployment patterns (with restrictions)
+- Comprehensive security headers and policies
+
 ## 📚 Documentation
 
 Detailed documentation for each construct:
 
 - [S3Backup Construct Guide](./docs/s3Backup/S3BACKUP_CONSTRUCT_GUIDE.md)
 - [S3Backup Multiple Instances Guide](./docs/s3Backup/MULTIPLE_INSTANCES_GUIDE.md)
+- [CloudFront for Lambda Construct Guide](./docs/cloudfront-for-lambda/CLOUDFRONT_FOR_LAMBDA_GUIDE.md)
+- [CloudFront for Lambda Multiple Deployments Guide](./docs/cloudfront-for-lambda/MULTIPLE_DEPLOYMENTS_GUIDE.md)
 
 ## 🔧 Development
 
@@ -92,6 +133,8 @@ npm test
 │   └── s3-backup/
 ├── test/                   # Unit tests
 ├── docs/                   # Documentation
+│   ├── cloudfront-for-lambda/
+│   └── s3-backup/
 ├── dist/                   # Compiled output
 └── build.sh               # Build script
 ```
@@ -121,6 +164,17 @@ npm run test:watch
 | `dataSyncProps` | `DataSyncProps` | DataSync configuration | Optional |
 | `centralBackupBucket` | `s3.IBucket` | Central backup bucket for DATA_SYNC/DIRECT_UPLOAD | Optional |
 | `outputConfig` | `OutputConfig` | CloudFormation outputs configuration | Optional |
+
+### CloudFrontForLambda Props
+
+| Property | Type | Description | Default |
+|----------|------|-------------|---------|
+| `lambdaFunction` | `lambda.IFunction` | The Lambda function to serve content from | Required |
+| `domainName` | `string` | The base domain name (e.g., 'api' for api.example.com) | Optional |
+| `subdomain` | `string` | Subdomain prefix (e.g., 'v1' for v1.api.example.com) | Optional |
+| `hostedZoneDomain` | `string` | The hosted zone domain name | Optional |
+| `sslCertificateArn` | `string` | Custom SSL certificate ARN | Optional |
+| `publicZone` | `route53.IHostedZone` | Existing hosted zone to use | Optional |
 
 
 ## 🤝 Contributing
