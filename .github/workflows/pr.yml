@@ -3,6 +3,11 @@ name: Pull Request checking and beta build
 on:
   pull_request:
 
+permissions:
+  contents: write
+  packages: write
+  pull-requests: write
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -81,15 +86,19 @@ jobs:
       - name: get package version name
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          BRANCH=$(echo $GITHUB_REF | sed 's|refs/heads/||')
+          BRANCH="${{ github.head_ref }}"
           VERSION_NAME="v$VERSION-beta-$BRANCH"
           echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
-          echo $VERSION_NAME
+          echo "Branch: $BRANCH"
+          echo "Version: $VERSION_NAME"
 
       - name: Create github release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.VERSION_NAME }}
+          name: "Beta Release ${{ env.VERSION_NAME }}"
+          body: "Automated beta release from PR #${{ github.event.number }}"
+          prerelease: true
           files: |
             *.tgz
             dist/**/*
