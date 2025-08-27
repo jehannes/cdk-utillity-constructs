@@ -107,8 +107,7 @@ jobs:
           prerelease: true
           make_latest: false
           files: |
-            !*.tgz
-            dist/**/*
+            dist/**/*.tgz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       # - name: Create npm release
