@@ -100,6 +100,8 @@ export interface BehaviorConfig {
 export interface CloudFrontForLambdaProps extends DomainConfig, CertificateConfig, BehaviorConfig {
   /**
    * The Lambda function to use as the CloudFront distribution origin
+   * 
+   * [disable-awslint:ref-via-interface] the actual class is needed for the function timeout
    */
   readonly lambdaFunction: lambda.Function;
 }

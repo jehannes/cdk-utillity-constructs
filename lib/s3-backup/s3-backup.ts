@@ -229,12 +229,52 @@ export interface S3BackupProps {
   readonly outputConfig?: OutputConfig;
 }
 
+/**
+ * S3Backup Construct
+ *
+ * An AWS CDK construct for creating flexible S3-based backup solutions with multiple patterns:
+ * - STANDALONE: Independent backup buckets with versioning and lifecycle management
+ * - DATA_SYNC: Automated synchronization between buckets using AWS DataSync
+ * - DIRECT_UPLOAD: Direct uploads to existing buckets with folder-based permissions
+ *
+ * Features include automatic IAM user creation, lifecycle management, CloudWatch integration,
+ * and support for multiple instances within the same stack.
+ */
 export class S3Backup extends Construct {
+  /**
+   * The S3 bucket created for backup storage.
+   * Only available for STANDALONE and DATA_SYNC backup types.
+   */
   public bucket?: s3.Bucket;
+  
+  /**
+   * The IAM user created for backup operations.
+   * Provides programmatic access to the backup bucket.
+   */
   public user?: iam.User;
+  
+  /**
+   * The access key for the IAM user.
+   * Used for programmatic access to AWS services.
+   */
   public accessKey?: iam.CfnAccessKey;
+  
+  /**
+   * The DataSync task for automated data synchronization.
+   * Only available for DATA_SYNC backup type.
+   */
   public dataSyncTask?: datasync.CfnTask;
+  
+  /**
+   * The IAM role used by DataSync for cross-service operations.
+   * Only available for DATA_SYNC backup type.
+   */
   public dataSyncRole?: iam.Role;
+  
+  /**
+   * The CloudWatch log group for DataSync task logging.
+   * Only available for DATA_SYNC backup type.
+   */
   public dataSyncLogGroup?: logs.LogGroup;
   
   constructor(scope: Construct, id: string, props: S3BackupProps) {
@@ -320,12 +360,22 @@ export class S3Backup extends Construct {
     }, props.outputConfig);
   }
 
+  /**
+   * Add a lifecycle rule to the backup bucket.
+   * 
+   * @param rule The lifecycle rule to add to the bucket
+   */
   public addLifecycleRule(rule: s3.LifecycleRule): void {
   if (this.bucket) {
     this.bucket.addLifecycleRule(rule);
     }
   }
 
+  /**
+   * Add a policy statement to the IAM user for additional permissions.
+   * 
+   * @param statement The policy statement to add to the user
+   */
   public addUserPolicy(statement: iam.PolicyStatement): void {
     if (this.user) {
       this.user.addToPolicy(statement);
