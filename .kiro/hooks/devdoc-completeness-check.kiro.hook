@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "Devdoc Completeness Check",
+  "description": "After a spec document (requirements.md, design.md, or tasks.md) is created, checks whether a devdoc was referenced as the source. If so, compares the spec against the devdoc to identify any issues, edge cases, or considerations from the devdoc that weren't captured in the spec.",
+  "version": "1",
+  "when": {
+    "type": "fileCreated",
+    "patterns": [
+      ".kiro/specs/**/requirements.md",
+      ".kiro/specs/**/design.md",
+      ".kiro/specs/**/tasks.md",
+      ".kiro/specs/**/bugfix.md"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A spec document was just created. Check if this spec was derived from a devdoc (look for references to files in devdocs/ within the spec content, the conversation history, or the spec's .config.kiro). If a source devdoc is identified, read both the devdoc and the newly created spec document, then compare them for completeness. Report any issues, edge cases, design considerations, TODOs, or constraints mentioned in the devdoc that are missing or insufficiently covered in the spec. If no devdoc source is found, skip this check silently."
+  }
+}

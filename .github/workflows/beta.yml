@@ -1,0 +1,102 @@
+name: Beta Release
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  beta-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linters
+        run: npm run lint
+
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+      - name: Build project
+        run: npm run build
+
+      - name: Determine version and compute beta tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          CURRENT_VERSION=$(gh release list --limit 1000 --json tagName --jq \
+            '[.[] | .tagName | select(test("^v[0-9]+$")) | ltrimstr("v") | tonumber] | max // 0')
+
+          if [ "$CURRENT_VERSION" -eq 0 ]; then
+            VERSION=1
+          else
+            VERSION=$CURRENT_VERSION
+          fi
+
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          TAG="v${VERSION}-beta-${PR_NUMBER}"
+
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "PR_NUMBER=${PR_NUMBER}" >> $GITHUB_ENV
+          echo "TAG=${TAG}" >> $GITHUB_ENV
+          echo "Computed tag: ${TAG}"
+
+      - name: Delete existing beta release for this PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete "${TAG}" --yes --cleanup-tag 2>/dev/null || true
+
+      - name: Package and create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mv cdk-utility-constructs-*.tgz "cdk-utility-constructs-${TAG}.tgz"
+
+          REPO="${{ github.repository }}"
+          COMMIT_SHA="${{ github.event.pull_request.head.sha }}"
+          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
+
+          BODY="## Beta Release ${TAG}
+
+          **PR:** #${PR_NUMBER}
+          **Branch:** \`${BRANCH_NAME}\`
+          **Commit:** \`${COMMIT_SHA}\`
+
+          ### Install
+
+          **npm (direct download — recommended):**
+          \`\`\`
+          npm install https://github.com/${REPO}/releases/download/${TAG}/cdk-utility-constructs-${TAG}.tgz
+          \`\`\`
+
+          **npm (git tag — requires build toolchain):**
+          \`\`\`
+          npm install ${REPO}#${TAG}
+          \`\`\`
+
+          > **Note:** The git tag method requires the jsii build toolchain to be available locally, as npm will clone and build from source."
+
+          gh release create "${TAG}" \
+            "cdk-utility-constructs-${TAG}.tgz" \
+            dist/js/*.tgz \
+            dist/python/*.tar.gz \
+            dist/python/*.whl \
+            --title "Beta Release ${TAG}" \
+            --notes "${BODY}" \
+            --prerelease \
+            --target "${{ github.event.pull_request.head.sha }}"

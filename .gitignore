@@ -18,3 +18,4 @@ dist/
 *.tgz
 
 .jsii
+.kiro/specs/**/*

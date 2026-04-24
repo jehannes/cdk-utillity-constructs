@@ -1,0 +1,110 @@
+name: Alpha Release
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  alpha-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linters
+        run: npm run lint
+
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+      - name: Build project
+        run: npm run build
+
+      - name: Determine version and compute alpha tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          CURRENT_VERSION=$(gh release list --limit 1000 --json tagName --jq \
+            '[.[] | .tagName | select(test("^v[0-9]+$")) | ltrimstr("v") | tonumber] | max // 0')
+
+          if [ "$CURRENT_VERSION" -eq 0 ]; then
+            VERSION=1
+          else
+            VERSION=$CURRENT_VERSION
+          fi
+
+          BRANCH_NAME="${GITHUB_REF_NAME}"
+          PREFIX="v${VERSION}-alpha-${BRANCH_NAME}-"
+          EXISTING_COUNT=$(gh release list --limit 1000 --json tagName --jq \
+            "[.[] | .tagName | select(startswith(\"${PREFIX}\"))] | length")
+          RELEASE_NUMBER=$((EXISTING_COUNT + 1))
+
+          TAG="v${VERSION}-alpha-${BRANCH_NAME}-${RELEASE_NUMBER}"
+
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "BRANCH_NAME=${BRANCH_NAME}" >> $GITHUB_ENV
+          echo "TAG=${TAG}" >> $GITHUB_ENV
+          echo "PREFIX=${PREFIX}" >> $GITHUB_ENV
+          echo "Computed tag: ${TAG}"
+
+      - name: Package and create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mv cdk-utility-constructs-*.tgz "cdk-utility-constructs-${TAG}.tgz"
+
+          REPO="${{ github.repository }}"
+          COMMIT_SHA="${{ github.sha }}"
+
+          BODY="## Alpha Release ${TAG}
+
+          **Branch:** \`${BRANCH_NAME}\`
+          **Commit:** \`${COMMIT_SHA}\`
+
+          ### Install
+
+          **npm (direct download — recommended):**
+          \`\`\`
+          npm install https://github.com/${REPO}/releases/download/${TAG}/cdk-utility-constructs-${TAG}.tgz
+          \`\`\`
+
+          **npm (git tag — requires build toolchain):**
+          \`\`\`
+          npm install ${REPO}#${TAG}
+          \`\`\`
+
+          > **Note:** The git tag method requires the jsii build toolchain to be available locally, as npm will clone and build from source."
+
+          gh release create "${TAG}" \
+            "cdk-utility-constructs-${TAG}.tgz" \
+            dist/js/*.tgz \
+            dist/python/*.tar.gz \
+            dist/python/*.whl \
+            --title "Alpha Release ${TAG}" \
+            --notes "${BODY}" \
+            --prerelease \
+            --target "${{ github.sha }}"
+
+      - name: Cleanup old alpha releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          OLD_RELEASES=$(gh release list --limit 1000 --json tagName,createdAt --jq \
+            "[.[] | select(.tagName | startswith(\"${PREFIX}\"))] | sort_by(.createdAt) | reverse | .[2:] | .[].tagName")
+
+          for RELEASE_TAG in $OLD_RELEASES; do
+            echo "Deleting old alpha release: ${RELEASE_TAG}"
+            gh release delete "$RELEASE_TAG" --yes --cleanup-tag || true
+          done

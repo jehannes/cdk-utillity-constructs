@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Summarize & Delete Completed Specs",
+  "description": "After a spec task completes, checks if ALL tasks in the spec are done. If so, appends a concise summary to .kiro/steering/completed-work.md (matching existing style: spec name as ### heading, one paragraph of what was done, key implementation details) If tasks remain, does nothing.",
+  "version": "1",
+  "when": {
+    "type": "postTaskExecution"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A spec task was just marked completed. Check if ALL tasks in this spec's tasks.md are now checked off ([x]). If any tasks remain unchecked ([ ]), do nothing — stop here.\n\nIf ALL tasks are complete:\n1. Read the spec's design.md (or bugfix.md) and tasks.md to understand what was built.\n2. Append a summary to `.kiro/steering/completed-work.md` following the existing style exactly: `### N. spec-name` heading (increment the number from the last entry), one dense paragraph covering what was implemented, key files touched, and any notable decisions. Keep it under 10 lines.\n3. Confirm what you did in one sentence."
+  }
+}

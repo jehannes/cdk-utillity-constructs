@@ -1,0 +1,4 @@
+# Completed Work
+
+### 1. github-release-workflow
+Implemented four GitHub Actions workflow files (`alpha.yml`, `beta.yml`, `release.yml`, `cleanup.yml`) in `.github/workflows/` to automate GitHub Release creation across three channels (alpha, beta, production) for the `cdk-utility-constructs` library. Each build workflow uses a single-job design with a shared pipeline (lint → test → build) and the `gh` CLI for all release operations. Version numbers are simple incrementing integers determined at runtime from existing GitHub Release tags — no `package.json` bumps. Alpha releases auto-clean old prereleases (keeping 2 most recent), beta releases overwrite per-PR, and the cleanup workflow deletes all associated prereleases when a PR closes. Legacy workflow files (`pr.yml`, `alpha-release.yaml`) were removed.

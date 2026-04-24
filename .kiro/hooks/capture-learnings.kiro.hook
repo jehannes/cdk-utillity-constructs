@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Capture Learnings",
+  "description": "After each agent execution, reviews the conversation for any new insights, patterns, gotchas, or decisions made, and appends them to the learnings steering file (.kiro/steering/learnings.md) so they persist across future sessions.",
+  "version": "1",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Review the conversation that just completed. If any meaningful learnings emerged, append them to `.kiro/steering/learnings.md`. If nothing noteworthy was learned, do nothing.\n\n**What counts as a learning:**\n- Bug discoveries or gotchas (especially Go/concurrency/Windows-specific)\n- Architectural decisions or pattern choices and their rationale\n- Debugging insights tied to specific code (function names, field names, concrete behavior)\n- New checklists or update-propagation requirements (e.g., 'when adding X, also update Y and Z')\n- API/library quirks encountered (Reddit API, RedGifs, gomedia, zerolog, yaml.v3, etc.)\n- Test patterns or PBT pitfalls discovered\n- Config system interactions or validation edge cases\n- Transport/rate-limiting/circuit-breaker behavior observations\n\n**What does NOT count:**\n- Generic Go knowledge or standard library behavior\n- Things the user explicitly asked you to do (that's a task, not a learning)\n- Temporary debugging steps that won't recur\n- Anything already captured in the file (read it first to check for duplicates)\n\n**Format rules:**\n- Read the existing file first. Match the existing style: terse, specific, code-referencing bullet points.\n- Place entries under the most appropriate existing section heading: 'Current bugs & gotchas', 'Architecture & patterns', 'Config system', 'Config field addition checklist', 'Testing patterns', 'Coding patterns', 'RedGifs notes', 'General principles', etc.\n- If no existing section fits, create a new `##` heading with a descriptive name and date annotation (e.g., `## Topic name (YYYY-MM-DD)`).\n- Do NOT create a new date-only heading — group by topic, not by session.\n- Each bullet should be self-contained: someone reading it months later with no conversation context should understand the point.\n- Include function/field/file names when relevant — vague bullets are useless.\n- For bugfixes: note what was wrong, what the fix was, and why (the 'why' is the learning).\n- For plans/discussions not yet implemented: add '(discussion only — not yet implemented)' to the section heading.\n- Keep the YAML front-matter block at the top of the file intact."
+  }
+}
