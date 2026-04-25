@@ -39,9 +39,6 @@ npm-debug.log*
 .env.production
 
 
-# Exclude jsii outdir
-dist
-
 # Include .jsii and .jsii.gz
 !.jsii
 !.jsii.gz

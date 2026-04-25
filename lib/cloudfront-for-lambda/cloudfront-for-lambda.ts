@@ -20,7 +20,9 @@ import * as uuid from "uuid";
  */
 export interface DomainConfig {
   /**
-   * Domain configuration for the CloudFront distribution
+   * The base domain name segment used to construct the full domain
+   * 
+   * @example 'api' results in 'api.example.com'
    */
   readonly domainName: string;
 
@@ -373,10 +375,4 @@ function getLambdaUrlOrigin(
   return lambdaOrigin;
 }
 
-/*
-Suggestions:
 
-Consider supporting multiple domains/subdomains.
-Add logging or monitoring integrations (e.g., CloudWatch).
-Validate domain/subdomain inputs for edge cases
-*/

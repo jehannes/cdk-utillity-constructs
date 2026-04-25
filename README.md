@@ -68,16 +68,19 @@ const myFunction = new lambda.Function(this, 'MyFunction', {
   code: lambda.Code.fromAsset('lambda'),
 });
 
-// Basic CloudFront distribution with function URL
-new CloudFrontForLambda(this, 'MyDistribution', {
-  lambdaFunction: myFunction,
-});
-
-// With custom domain
+// CloudFront distribution with custom domain
 new CloudFrontForLambda(this, 'ApiDistribution', {
   lambdaFunction: myFunction,
   domainName: 'api',
   hostedZoneDomain: 'example.com', // Creates api.example.com
+});
+
+// With subdomain
+new CloudFrontForLambda(this, 'V1Distribution', {
+  lambdaFunction: myFunction,
+  domainName: 'api',
+  subdomain: 'v1',
+  hostedZoneDomain: 'example.com', // Creates v1.api.example.com
 });
 ```
 
@@ -169,12 +172,16 @@ npm run test:watch
 
 | Property | Type | Description | Default |
 |----------|------|-------------|---------|
-| `lambdaFunction` | `lambda.IFunction` | The Lambda function to serve content from | Required |
-| `domainName` | `string` | The base domain name (e.g., 'api' for api.example.com) | Optional |
-| `subdomain` | `string` | Subdomain prefix (e.g., 'v1' for v1.api.example.com) | Optional |
-| `hostedZoneDomain` | `string` | The hosted zone domain name | Optional |
-| `sslCertificateArn` | `string` | Custom SSL certificate ARN | Optional |
-| `publicZone` | `route53.IHostedZone` | Existing hosted zone to use | Optional |
+| `lambdaFunction` | `lambda.Function` | The Lambda function to front with CloudFront | Required |
+| `domainName` | `string` | Base domain name segment (e.g., 'api' for api.example.com) | Required |
+| `hostedZoneDomain` | `string` | Top-level domain where the Route53 hosted zone exists | Required |
+| `subdomain` | `string` | Subdomain prefix (e.g., 'v1' for v1.api.example.com) | - |
+| `certificate` | `acm.ICertificate` | Custom ACM certificate (must be in us-east-1) | DNS validated cert |
+| `useWildcardCertificate` | `boolean` | Use a wildcard certificate from SSM Parameter Store | `false` |
+| `wildcardCertificateArn` | `string` | ARN or SSM parameter name for wildcard certificate | SSM default path |
+| `allowDirectAccess` | `boolean` | Allow direct Lambda URL access without IAM auth | `false` |
+| `allowedMethods` | `cf.AllowedMethods` | Allowed HTTP methods | `ALLOW_GET_HEAD` |
+| `geoRestriction` | `cf.GeoRestriction` | Geographic restriction settings | `allowlist("NL")` |
 
 
 ## 🤝 Contributing

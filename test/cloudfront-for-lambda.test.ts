@@ -1216,7 +1216,7 @@ describe('CloudFrontForLambda Construct', () => {
         
       } catch (error) {
         // Even if the execution fails, the attempt to run the code should contribute to coverage
-        console.log('Code execution completed with result:', error.message);
+        console.log('Code execution completed with result:', (error as Error).message);
         expect(true).toBe(true);
       }
     });

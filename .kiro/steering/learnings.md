@@ -29,3 +29,28 @@ inclusion: manual
 - `awslint` `exclude` array in `.awslint.json` does **not** filter out errors from `aws-cdk-lib` transitive types (e.g., `prefer-ref-interface:aws-cdk-lib.aws_s3.IBucketNotificationDestination.bind.bucket`). Neither glob patterns (`"*:aws-cdk-lib.*"`) nor exact error codes work in the config file for these. The `awslint` section in `package.json` also has an `exclude` array but it's equally ignored for these transitive type errors. Two working alternatives: (1) CLI `-x` flag: `awslint -x "prefer-ref-interface:aws-cdk-lib*"` in the `lint:aws` script, or (2) disable the rule entirely via `"prefer-ref-interface": false` in the `rules` section of `.awslint.json`. Option 2 is cleaner but loses the check on your own props (mitigated by keeping `[disable-awslint:prefer-ref-interface]` JSDoc tags as documentation of intent).
 - `awslint` `[disable-awslint:prefer-ref-interface]` JSDoc tags work for your own construct props (e.g., `CloudFrontForLambdaProps.certificate`, `S3BackupProps.centralBackupBucket`) but only after rebuilding the `.jsii` assembly with `npx jsii`. awslint reads from `.jsii`, not source — stale assemblies mean JSDoc changes have no effect.
 - `awslint`'s `prefer-ref-interface` rule is a CDK team internal convention, not relevant to third-party construct libraries. It existed because CDK v1 was split into many packages (`@aws-cdk/aws-s3`, `@aws-cdk/aws-lambda`, etc.) and L1 ref interfaces (`IxxxRef`) avoided hard cross-package dependencies. CDK v2 consolidated everything into `aws-cdk-lib`, making this moot. For third-party L2/L3 constructs, accepting `IBucket`/`ICertificate`/`IParameter` is the standard and correct approach — disabling this rule is the right call.
+
+## TypeScript strict mode gotchas (2026-04-25)
+
+- In strict mode (`strict: true` in `tsconfig.json`), `catch` clause variables are typed as `unknown`, not `any`. Accessing `error.message` directly in a `catch (error) {}` block causes a type error. Fix: cast with `(error as Error).message`. This surfaced in `test/cloudfront-for-lambda.test.ts` line 1219 inside a `vm.runInContext` try/catch. Easy to miss because many older TS codebases had `"useUnknownInCatchVariables": false` or didn't enable `strict`.
+
+## npm packaging gotchas (2026-04-25)
+
+- `.npmignore` in this repo excludes `dist` (the jsii output directory referenced by `"main": "dist/index.js"` in `package.json`). Later `!.jsii` re-include rules don't undo the `dist` exclusion. Result: `npm pack` produces a tarball with no compiled code — consumers get an empty package. `.npmignore` rule ordering: later rules override earlier ones only for the *same path*, not for parent directories. If `dist` is excluded, files under `dist/` are also excluded regardless of later `!dist/**/*` rules. Fix: remove the `dist` line entirely since `"files"` in `package.json` already controls inclusion (`"files": ["dist/**/*", ".jsii"]`). When both `.npmignore` and `"files"` exist, `.npmignore` takes precedence — `"files"` is ignored.
+- `"clean": "rm -rf dist/ lib/ .jsii *.tgz"` in `package.json` deletes the `lib/` source directory (construct source code lives in `lib/`). Should only clean build outputs: `dist/`, `.jsii`, `*.tgz`. The `lib/` directory is `rootDir` in `tsconfig.json`, not a build artifact.
+
+## CDK API deprecations (2026-04-25)
+
+- `acm.DnsValidatedCertificate` is deprecated in aws-cdk-lib. Used in `getCertificate()` in `lib/cloudfront-for-lambda/cloudfront-for-lambda.ts` line 322. The replacement `acm.Certificate` with `validation: acm.CertificateValidation.fromDns(hostedZone)` does **not** support the `region` parameter — it creates the certificate in the stack's region. For CloudFront distributions (which require certs in `us-east-1`), the only clean alternatives are: (1) require users to pass a pre-created `us-east-1` certificate via the `certificate` prop, (2) use a cross-region custom resource, or (3) keep using the deprecated API and accept the warning until CDK provides a built-in cross-region certificate construct. The deprecated API still works — it's just flagged. Open CDK feature request: https://github.com/aws/aws-cdk/issues/25343 (open since 2023, no resolution). Decision: ride it out — the API won't be removed until CDK v3 at earliest, and the `certificate` prop already gives users an escape hatch to avoid the deprecation warning by passing their own us-east-1 cert.
+
+## Release readiness checklist (2026-04-25)
+
+When preparing `cdk-utility-constructs` for release, verify:
+- `package.json` `"description"` is not empty (npm/Construct Hub display)
+- `package.json` `"repository.url"` is not empty (npm links to repo)
+- `.npmignore` does not exclude `dist/` (the compiled output directory)
+- `"clean"` script does not delete `lib/` (source code)
+- README props tables match actual exported interfaces (e.g., `CloudFrontForLambdaProps` lists `certificate`, `useWildcardCertificate`, `wildcardCertificateArn`, `allowDirectAccess`, `allowedMethods`, `geoRestriction` — not stale names like `sslCertificateArn` or `publicZone`)
+- `lambdaFunction` prop type is `lambda.Function` (concrete class, needed for `.timeout`), not `lambda.IFunction` — README should match
+- No dev-only comments left in shipped source (e.g., `/* Suggestions: ... */` at bottom of `cloudfront-for-lambda.ts`)
+- JSDoc on all exported interface properties matches the property's purpose (e.g., `DomainConfig.domainName` JSDoc was a copy of the interface-level doc, not a property description)
