@@ -59,7 +59,7 @@
     "aws-cdk": "^2.1119.0",
     "aws-cdk-lib": "2.212.0",
     "awslint": "^2.250.0-alpha.0",
-    "constructs": "10.4.2",
+    "constructs": "10.6.0",
     "jest": "^30.3.0",
     "jsii": "^5.9.37",
     "jsii-pacmak": "^1.128.0",
