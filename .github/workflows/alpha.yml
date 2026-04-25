@@ -15,24 +15,41 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
+      - name: Check for open PR from this branch
+        id: pr-check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_COUNT=$(gh pr list --head "${GITHUB_REF_NAME}" --state open --json number --jq 'length')
+          echo "has_pr=$([[ $PR_COUNT -gt 0 ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          if [ "$PR_COUNT" -gt 0 ]; then
+            echo "Skipping alpha — beta is being built for the open PR"
+          fi
+
       - name: Set up Node.js
+        if: steps.pr-check.outputs.has_pr != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '24'
 
       - name: Install dependencies
+        if: steps.pr-check.outputs.has_pr != 'true'
         run: npm ci
 
       - name: Run linters
+        if: steps.pr-check.outputs.has_pr != 'true'
         run: npm run lint
 
       - name: Run tests with coverage
+        if: steps.pr-check.outputs.has_pr != 'true'
         run: npm run test:coverage
 
       - name: Build project
+        if: steps.pr-check.outputs.has_pr != 'true'
         run: npm run build
 
       - name: Determine version and compute alpha tag
+        if: steps.pr-check.outputs.has_pr != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -60,6 +77,7 @@ jobs:
           echo "Computed tag: ${TAG}"
 
       - name: Package and create GitHub Release
+        if: steps.pr-check.outputs.has_pr != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -98,6 +116,7 @@ jobs:
             --target "${{ github.sha }}"
 
       - name: Cleanup old alpha releases
+        if: steps.pr-check.outputs.has_pr != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

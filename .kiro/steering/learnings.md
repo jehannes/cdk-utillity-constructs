@@ -13,6 +13,7 @@ inclusion: manual
 - `gh release list --json tagName --jq` with `select(test("^v[0-9]+$"))` filters release tags to exact `v<integer>` pattern. The `// 0` jq fallback handles the no-releases case (first-ever release defaults to version 1).
 - Single-job GitHub Actions workflows (sequential steps) are preferred over multi-job (lint→test→build as separate jobs) for this repo: avoids `actions/upload-artifact`/`actions/download-artifact` overhead and repeated `npm install`/`npm ci` across jobs. The existing `pr.yml` had 3-4 redundant dependency installs per run.
 - Concurrent merges to `main` can race on version number determination — both workflows compute the same next version. Mitigated by `gh release create` failing if the tag already exists; the second workflow fails and can be re-run. Acceptable for low-traffic repos.
+- When a PR is open, pushing to the branch triggers both `alpha.yml` (on `push`) and `beta.yml` (on `pull_request` sync) for the same commit — the alpha build is redundant since beta already covers it. Potential optimization: skip alpha when an open PR exists from the current branch using `gh pr list --head "${{ github.ref_name }}" --state open`. Not yet implemented.
 
 ## npm dependency gotchas (2026-04-25)
 
