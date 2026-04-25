@@ -13,7 +13,6 @@ import {
   Duration,
 } from "aws-cdk-lib";
 import * as cdk from "aws-cdk-lib";
-import * as uuid from "uuid";
 
 /**
  * Domain configuration for CloudFront distribution
@@ -356,7 +355,7 @@ function getLambdaUrlOrigin(
     // Use OAC for protected access
     const oac = new cf.CfnOriginAccessControl(construct, "lambdaUrlOAC", {
       originAccessControlConfig: {
-        name: uuid.v5(Stack.of(construct).stackName, uuid.v5.DNS),
+        name: cdk.Names.uniqueId(construct),
         description: "Allow access to lambda url",
         originAccessControlOriginType: "lambda",
         signingBehavior: "always", // Always sign requests
