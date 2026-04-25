@@ -1160,8 +1160,6 @@ describe('CloudFrontForLambda Construct', () => {
     it('exercises uncovered branches through direct code execution', () => {
       // Use Node.js VM to execute the actual source code and exercise uncovered branches
       const vm = require('vm');
-      const fs = require('fs');
-      const path = require('path');
       
       try {
         // Create a context with the necessary AWS CDK modules

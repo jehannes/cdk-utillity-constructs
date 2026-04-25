@@ -40,6 +40,7 @@
     "docs-public-apis":true,
     "props-default-doc":true,
     "props-no-undefined-default":true,
-    "no-experimental-apis":true
+    "no-experimental-apis":true,
+    "prefer-ref-interface":false
   }
 }

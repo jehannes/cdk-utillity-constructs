@@ -208,6 +208,8 @@ export interface S3BackupProps {
    * Optional: The central backup bucket to use
    * Required for DATA_SYNC and DIRECT_UPLOAD backup types.
    * 
+   * [disable-awslint:prefer-ref-interface]
+   * 
    * @default - no central backup bucket
    */
   readonly centralBackupBucket?: s3.IBucket;
@@ -215,6 +217,8 @@ export interface S3BackupProps {
   /**
    * Optional: An SSM parameter with the ARN of the central backup bucket
    * Alternative to centralBackupBucket for dynamic bucket resolution.
+   * 
+   * [disable-awslint:prefer-ref-interface]
    * 
    * @default - no SSM parameter
    */

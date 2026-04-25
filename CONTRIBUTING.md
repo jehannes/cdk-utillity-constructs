@@ -19,7 +19,7 @@ Please keep in mind that I might ask more than this when I see your PR.
 All contributions must meet these strict requirements:
 
 ### minimum compatibility
-- with the cdk [design guidelines](https://github.com/aws/aws-cdk/blob/main/docs/DESIGN_GUIDELINES.md)
+- with the cdk [design guidelines](https://github.com/aws/aws-cdk/blob/main/docs/DESIGN_GUIDELINES.md) where possible
 - with construct hub
 - with jsii
 
@@ -32,6 +32,12 @@ All contributions must meet these strict requirements:
 - Use TypeScript with strict type checking
 - Include comprehensive JSDoc documentation
 - Follow the existing code style and patterns
+
+### Linting
+
+Run `npm run lint` before submitting. This runs both `awslint` (CDK design guidelines) and `oxlint` (general code quality).
+
+The `prefer-ref-interface` awslint rule is intentionally disabled in `.awslint.json`. This rule was designed for the CDK team's internal use — it enforced L1 reference interfaces (`IxxxRef`) to avoid cross-package dependencies when CDK v1 was split into separate npm packages. Since CDK v2 consolidated everything into `aws-cdk-lib`, the rule no longer serves a purpose. For third-party construct libraries like this one, accepting L2 interfaces (`IBucket`, `ICertificate`, `IParameter`, etc.) is the standard and correct approach.
 
 ## How to Contribute
 

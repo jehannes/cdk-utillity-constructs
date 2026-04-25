@@ -1,6 +1,6 @@
 {
   "rules": {},
-  "ignore": [
+  "ignorePatterns": [
     "dist/**/*",
     "lib/**/*.js",
     "lib/**/*.d.ts", 

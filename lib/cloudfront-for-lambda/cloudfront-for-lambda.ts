@@ -47,6 +47,8 @@ export interface CertificateConfig {
   /**
    * Certificate configuration for HTTPS
    * 
+   * [disable-awslint:prefer-ref-interface]
+   * 
    * @default - A new certificate will be created with DNS validation
    */
   readonly certificate?: acm.ICertificate;

@@ -76,5 +76,14 @@
   "overrides": {
     "change-case@4.1.2": "^5.4.4",
     "glob@7.2.3": "^9.3.5"
+  },
+  "awslint": {
+    "exclude": [
+      "prefer-ref-interface:aws-cdk-lib.aws_s3.IBucketNotificationDestination.bind.bucket",
+      "prefer-ref-interface:aws-cdk-lib.aws_s3.GrantReplicationPermissionDestinationProps.bucket",
+      "prefer-ref-interface:aws-cdk-lib.aws_s3.GrantReplicationPermissionDestinationProps.encryptionKey",
+      "prefer-ref-interface:aws-cdk-lib.aws_s3.GrantReplicationPermissionProps.sourceDecryptionKey",
+      "prefer-ref-interface:aws-cdk-lib.aws_events.IRuleTarget.bind.rule"
+    ]
   }
 }
