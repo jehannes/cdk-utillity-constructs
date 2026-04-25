@@ -57,7 +57,7 @@
     "@types/uuid": "^10.0.0",
     "@typescript/native-preview": "^7.0.0-dev.20260424.1",
     "aws-cdk": "^2.1119.0",
-    "aws-cdk-lib": "2.212.0",
+    "aws-cdk-lib": "2.251.0",
     "awslint": "^2.250.0-alpha.0",
     "constructs": "10.4.2",
     "jest": "^30.3.0",
