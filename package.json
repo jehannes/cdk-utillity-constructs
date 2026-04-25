@@ -55,7 +55,7 @@
     "@types/jest": "^30.0.0",
     "@types/node": "25.6.0",
     "@types/uuid": "^10.0.0",
-    "@typescript/native-preview": "^7.0.0-dev.20260424.1",
+    "@typescript/native-preview": "^7.0.0-dev.20260425.1",
     "aws-cdk": "^2.1119.0",
     "aws-cdk-lib": "2.212.0",
     "awslint": "^2.250.0-alpha.0",
