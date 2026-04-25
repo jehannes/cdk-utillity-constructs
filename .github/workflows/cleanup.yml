@@ -1,0 +1,66 @@
+name: Cleanup Pre-releases
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup-releases:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Delete alpha and beta releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+
+          echo "Cleaning up releases for branch: ${BRANCH_NAME}, PR: #${PR_NUMBER}"
+
+          ALPHA_DELETED=0
+          BETA_DELETED=0
+
+          # Delete alpha releases matching v*-alpha-<branch>-*
+          ALPHA_TAGS=$(gh release list --limit 1000 --json tagName --jq \
+            "[.[] | .tagName | select(test(\"^v[0-9]+-alpha-${BRANCH_NAME}-\"))] | .[]")
+
+          for TAG in $ALPHA_TAGS; do
+            echo "Deleting alpha release: ${TAG}"
+            if gh release delete "${TAG}" --yes --cleanup-tag; then
+              ALPHA_DELETED=$((ALPHA_DELETED + 1))
+            else
+              echo "::warning::Failed to delete alpha release: ${TAG}"
+            fi
+          done
+
+          # Delete beta releases matching v*-beta-<pr_number>
+          BETA_TAGS=$(gh release list --limit 1000 --json tagName --jq \
+            "[.[] | .tagName | select(test(\"^v[0-9]+-beta-${PR_NUMBER}$\"))] | .[]")
+
+          for TAG in $BETA_TAGS; do
+            echo "Deleting beta release: ${TAG}"
+            if gh release delete "${TAG}" --yes --cleanup-tag; then
+              BETA_DELETED=$((BETA_DELETED + 1))
+            else
+              echo "::warning::Failed to delete beta release: ${TAG}"
+            fi
+          done
+
+          # Write summary
+          echo "## Cleanup Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** \`${BRANCH_NAME}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**PR:** #${PR_NUMBER}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Channel | Releases Deleted |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-----------------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Alpha | ${ALPHA_DELETED} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Beta | ${BETA_DELETED} |" >> $GITHUB_STEP_SUMMARY
+
+          echo "Cleanup complete: ${ALPHA_DELETED} alpha and ${BETA_DELETED} beta releases deleted."

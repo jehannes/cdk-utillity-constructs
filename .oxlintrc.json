@@ -1,0 +1,12 @@
+{
+  "rules": {},
+  "ignorePatterns": [
+    "dist/**/*",
+    "lib/**/*.js",
+    "lib/**/*.d.ts", 
+    "coverage/**/*",
+    "node_modules/**/*",
+    "*.d.ts",
+    ".jsii"
+  ]
+}

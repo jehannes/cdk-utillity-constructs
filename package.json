@@ -1,16 +1,20 @@
 {
   "version": "0.0.1",
   "name": "cdk-utility-constructs",
-  "description": "",
+  "stability": "experimental",
+  "description": "Reusable AWS CDK constructs for CloudFront + Lambda Function URL distributions and flexible S3 backup patterns",
+  "author": {
+    "name": "Jehannes Zuidema"
+  },
   "license": "Apache-2.0",
   "main": "dist/index.js",
   "files": [
-    "dist/*",
+    "dist/**/*",
     ".jsii"
   ],
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/jehannes/cdk-utility-constructs.git"
   },
   "exports": {
     ".": "./dist/index.js"
@@ -20,27 +24,66 @@
     "awscdk"
   ],
   "scripts": {
-    "build": "./build.sh",
+    "build": "bash ./build.sh",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "lint": "npm run lint:aws && npm run lint:ox",
+    "lint:aws": "awslint",
+    "lint:aws:fix": "awslint --fix",
+    "lint:ox": "oxlint",
+    "lint:ox:fix": "oxlint --fix",
+    "clean": "rm -rf dist/ .jsii *.tgz",
+    "pack": "npm pack",
+    "prepublishOnly": "npm run build"
+  },
+  "jsii": {
+    "outdir": "dist",
+    "tsconfig": "tsconfig.json",
+    "validateTsconfig": "strict",
+    "targets": {
+      "python": {
+        "distName": "cdk-utility-constructs",
+        "module": "cdk_utility_constructs"
+      }
+    },
+    "excludeTypescript": [
+      "test/**/*"
+    ]
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
-    "@types/node": "24.3.0",
-    "@typescript/native-preview": "^7.0.0-dev.20250815.1",
-    "aws-cdk": "2.1025.0",
-    "aws-cdk-lib": "^2.211.0",
-    "constructs": "^10.4.2",
-    "jest": "^30.0.5",
-    "jsii": "5.9.2",
-    "ts-jest": "^29.4.1",
+    "@types/node": "25.6.0",
+    "@types/uuid": "^10.0.0",
+    "@typescript/native-preview": "^7.0.0-dev.20260424.1",
+    "aws-cdk": "^2.1119.0",
+    "aws-cdk-lib": "2.212.0",
+    "awslint": "^2.250.0-alpha.0",
+    "constructs": "10.4.2",
+    "jest": "^30.3.0",
+    "jsii": "^5.9.37",
+    "jsii-pacmak": "^1.128.0",
+    "oxlint": "^1.61.0",
+    "ts-jest": "^29.4.9",
     "ts-node": "^10.9.2",
-    "typescript": "~5.9.2",
-    "uuid": "^11.1.0"
+    "typescript": "~6.0.3",
+    "uuid": "^9.0.0"
   },
   "peerDependencies": {
-    "aws-cdk-lib": "^2.211.0",
+    "aws-cdk-lib": "^2.212.0",
     "constructs": "^10.4.2"
+  },
+  "overrides": {
+    "change-case@4.1.2": "^5.4.4",
+    "glob@7.2.3": "^9.3.5"
+  },
+  "awslint": {
+    "exclude": [
+      "prefer-ref-interface:aws-cdk-lib.aws_s3.IBucketNotificationDestination.bind.bucket",
+      "prefer-ref-interface:aws-cdk-lib.aws_s3.GrantReplicationPermissionDestinationProps.bucket",
+      "prefer-ref-interface:aws-cdk-lib.aws_s3.GrantReplicationPermissionDestinationProps.encryptionKey",
+      "prefer-ref-interface:aws-cdk-lib.aws_s3.GrantReplicationPermissionProps.sourceDecryptionKey",
+      "prefer-ref-interface:aws-cdk-lib.aws_events.IRuleTarget.bind.rule"
+    ]
   }
 }

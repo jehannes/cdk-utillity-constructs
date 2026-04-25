@@ -6,7 +6,6 @@ import {
   aws_datasync as datasync,
   aws_logs as logs,
   CfnOutput,
-  StackProps,
   Duration
 } from "aws-cdk-lib";
 import { Construct } from "constructs";
@@ -39,142 +38,247 @@ export enum BackupType {
   DIRECT_UPLOAD = "direct_upload",
 }
 
+/**
+ * Properties for data synchronization configuration
+ */
 export interface DataSyncProps {
   /**
-   * Optional: Target folder for data synchronization.
+   * Optional: Target folder for data synchronization
+   * 
+   * @default - no specific target folder
    */
-  dataSyncTargetFolder?: string;
+  readonly dataSyncTargetFolder?: string;
+  
   /**
-   * Optional: Interval for data synchronization.
+   * Optional: Interval for data synchronization
+   * 
+   * @default - no automatic interval
    */
-  dataSyncInterval?: cdk.Duration;
-  /*
-   * Optional: Schedule for the DataSync task.
+  readonly dataSyncInterval?: cdk.Duration;
+  
+  /**
+   * Optional: Schedule for the DataSync task
    * If provided, the DataSync task will be created with this schedule.
    * This is only applicable if the backupType is DATA_SYNC.
+   * 
+   * @default - no schedule
    */
-  dataSyncSchedule?: datasync.CfnTask.TaskScheduleProperty;
+  readonly dataSyncSchedule?: datasync.CfnTask.TaskScheduleProperty;
 }
 
+/**
+ * Properties for S3 bucket configuration
+ */
 export interface BucketProps {
   /**
-   * Optional: Name of the S3 bucket for backups.
+   * Optional: Name of the S3 bucket for backups
    * If not provided, a unique bucket name will be generated.
+   * 
+   * @default - a unique bucket name will be generated
    */
-  bucketName?: string; // maybe require this?
+  readonly bucketName?: string;
+  
   /**
-   * Optional: Whether the stack is a standalone backup bucket.
-   * If true, the bucket will be created without any additional configurations.
+   * Optional: Folder path for direct upload configurations
+   * This is used when the backup type is DIRECT_UPLOAD.
+   * 
+   * @default - no specific folder
    */
-  directUploadFolder?: string;
+  readonly directUploadFolder?: string;
+  
   /**
-   * Optional: Indicates if lifecycle rules should be applied to the bucket.
-   * If true, lifecycle rules will be added to the bucket.
+   * Optional: Whether to skip applying default lifecycle rules to the bucket
+   * If true, no lifecycle rules will be added to the bucket.
    * This is intended to make configuration easier by allowing users to opt-out of default lifecycle rules.
    *
    * @default false
    */
-  noLifecycleRules?: boolean;
+  readonly noLifecycleRules?: boolean;
 }
 
+/**
+ * Configuration for CloudFormation outputs
+ */
 export interface OutputConfig {
   /**
-   * Whether to create bucket-related outputs.
+   * Optional: Whether to create bucket-related outputs
+   * 
    * @default true
    */
-  includeBucketOutputs?: boolean;
+  readonly includeBucketOutputs?: boolean;
+  
   /**
-   * Whether to create DataSync-related outputs.
+   * Optional: Whether to create DataSync-related outputs
+   * 
    * @default true
    */
-  includeDataSyncOutputs?: boolean;
+  readonly includeDataSyncOutputs?: boolean;
+  
   /**
-   * Whether to create IAM user outputs.
+   * Optional: Whether to create IAM user outputs
+   * 
    * @default true
    */
-  includeUserOutputs?: boolean;
+  readonly includeUserOutputs?: boolean;
+  
   /**
-   * Whether to create access key outputs (includes sensitive access keys).
+   * Optional: Whether to create access key outputs (includes sensitive access keys)
    * Note: This is separate from includeUserOutputs for security reasons.
+   * 
    * @default false
    */
-  includeAccessKeyOutputs?: boolean;
+  readonly includeAccessKeyOutputs?: boolean;
+  
   /**
-   * Optional prefix for all output IDs to avoid conflicts.
-   * @default ""
+   * Optional: Prefix for all output IDs to avoid conflicts
+   * 
+   * @default - no prefix
    */
-  outputPrefix?: string;
+  readonly outputPrefix?: string;
 }
 
-export interface iamUserProps {
+/**
+ * Properties for IAM user configuration
+ */
+export interface IamUserProps {
   /**
-   * Optional: Name of the IAM user for accessing the backup bucket.
+   * Optional: Name of the IAM user for accessing the backup bucket
    * If not provided, a default user name will be used.
+   * 
+   * @default - a default user name will be generated
    */
-  userName?: string;
+  readonly userName?: string;
+  
   /**
-   * Optional: Serial number for the access key.
+   * Optional: Serial number for the access key
    * Can be incremented to rotate the access key.
    * 
    * @default 0
    */
-  keySerial?: number;
+  readonly keySerial?: number;
+  
   /**
-   * Optional: Whether to create an access key for the backup user.
+   * Optional: Whether to create an access key for the backup user
    * If true, an access key will be created for the IAM user.
+   * 
    * @default true
    */
-  createAccessKey?: boolean;
+  readonly createAccessKey?: boolean;
+  
   /**
-   * Optional: Whether to grant permissions to list all buckets.
+   * Optional: Whether to grant permissions to list all buckets
    * If true, the IAM user will be granted permissions to list all buckets.
    * 
    * @default false
    */
-  listAllBuckets?: boolean;
+  readonly listAllBuckets?: boolean;
 }
 
-export interface S3BackupProps extends StackProps {
+/**
+ * Properties for the S3Backup construct
+ */
+export interface S3BackupProps {
   /**
-   * The type of backup to create.
+   * The type of backup to create
    */
-  backupType: BackupType;
+  readonly backupType: BackupType;
+  
   /**
-   * Optional: Properties for the IAM user.
+   * Optional: Properties for the IAM user
    *
-   * @default {}
+   * @default - default IAM user configuration will be used
    */
-  iamUserProps?: iamUserProps;
+  readonly iamUserProps?: IamUserProps;
+  
   /**
-   * Optional: Properties for data synchronization.
+   * Optional: Properties for data synchronization
    * 
+   * @default - no data synchronization
    */
-  dataSyncProps?: DataSyncProps;
+  readonly dataSyncProps?: DataSyncProps;
+  
   /**
-   * Optional: Properties for the created S3 bucket.
+   * Optional: Properties for the created S3 bucket
+   * 
+   * @default - default bucket configuration will be used
    */
-  bucketProps?: BucketProps;
+  readonly bucketProps?: BucketProps;
+  
   /**
-   * Optional: The central backup bucket to use.
+   * Optional: The central backup bucket to use
+   * Required for DATA_SYNC and DIRECT_UPLOAD backup types.
+   * 
+   * [disable-awslint:prefer-ref-interface]
+   * 
+   * @default - no central backup bucket
    */
-  centralBackupBucket?: s3.IBucket;
+  readonly centralBackupBucket?: s3.IBucket;
+  
   /**
-   * Optional: An SSM parameter with the ARN of the central backup bucket.
+   * Optional: An SSM parameter with the ARN of the central backup bucket
+   * Alternative to centralBackupBucket for dynamic bucket resolution.
+   * 
+   * [disable-awslint:prefer-ref-interface]
+   * 
+   * @default - no SSM parameter
    */
-  centralBackupParameter?: ssm.IParameter;
+  readonly centralBackupParameter?: ssm.IParameter;
+  
   /**
-   * Optional: Configuration for CloudFormation outputs.
+   * Optional: Configuration for CloudFormation outputs
    * If not provided, all relevant outputs will be created except access keys.
+   * 
+   * @default - all outputs except access keys will be created
    */
-  outputConfig?: OutputConfig;
+  readonly outputConfig?: OutputConfig;
 }
 
+/**
+ * S3Backup Construct
+ *
+ * An AWS CDK construct for creating flexible S3-based backup solutions with multiple patterns:
+ * - STANDALONE: Independent backup buckets with versioning and lifecycle management
+ * - DATA_SYNC: Automated synchronization between buckets using AWS DataSync
+ * - DIRECT_UPLOAD: Direct uploads to existing buckets with folder-based permissions
+ *
+ * Features include automatic IAM user creation, lifecycle management, CloudWatch integration,
+ * and support for multiple instances within the same stack.
+ */
 export class S3Backup extends Construct {
+  /**
+   * The S3 bucket created for backup storage.
+   * Only available for STANDALONE and DATA_SYNC backup types.
+   */
   public bucket?: s3.Bucket;
+  
+  /**
+   * The IAM user created for backup operations.
+   * Provides programmatic access to the backup bucket.
+   */
   public user?: iam.User;
+  
+  /**
+   * The access key for the IAM user.
+   * Used for programmatic access to AWS services.
+   */
   public accessKey?: iam.CfnAccessKey;
+  
+  /**
+   * The DataSync task for automated data synchronization.
+   * Only available for DATA_SYNC backup type.
+   */
   public dataSyncTask?: datasync.CfnTask;
+  
+  /**
+   * The IAM role used by DataSync for cross-service operations.
+   * Only available for DATA_SYNC backup type.
+   */
   public dataSyncRole?: iam.Role;
+  
+  /**
+   * The CloudWatch log group for DataSync task logging.
+   * Only available for DATA_SYNC backup type.
+   */
   public dataSyncLogGroup?: logs.LogGroup;
   
   constructor(scope: Construct, id: string, props: S3BackupProps) {
@@ -184,8 +288,10 @@ export class S3Backup extends Construct {
     checkProps(props); // verifies
     
     // === Property Initialization ===
-    props.iamUserProps = props.iamUserProps ?? {};
-    props.iamUserProps.createAccessKey = props.iamUserProps.createAccessKey ?? true;
+    const iamUserProps = {
+      ...props.iamUserProps,
+      createAccessKey: props.iamUserProps?.createAccessKey ?? true
+    };
 
     // === Bucket Creation Phase ===
     // Create backup bucket for STANDALONE and DATA_SYNC types
@@ -194,8 +300,8 @@ export class S3Backup extends Construct {
         ? createBackupBucket(
             this,
             props.backupType === BackupType.STANDALONE,
-            props.bucketProps,
-            id
+            id,
+            props.bucketProps
           )
         : undefined;
 
@@ -239,9 +345,9 @@ export class S3Backup extends Construct {
     const userResult = createBackupUser(
       this,
       targetBucket,
+      id,
       folderAccess,
-      props?.iamUserProps,
-      id
+      iamUserProps
     );
     this.user = userResult.user;
     this.accessKey = userResult.accessKey;
@@ -258,12 +364,22 @@ export class S3Backup extends Construct {
     }, props.outputConfig);
   }
 
+  /**
+   * Add a lifecycle rule to the backup bucket.
+   * 
+   * @param rule The lifecycle rule to add to the bucket
+   */
   public addLifecycleRule(rule: s3.LifecycleRule): void {
   if (this.bucket) {
     this.bucket.addLifecycleRule(rule);
     }
   }
 
+  /**
+   * Add a policy statement to the IAM user for additional permissions.
+   * 
+   * @param statement The policy statement to add to the user
+   */
   public addUserPolicy(statement: iam.PolicyStatement): void {
     if (this.user) {
       this.user.addToPolicy(statement);
@@ -469,8 +585,8 @@ function checkProps(props: S3BackupProps) {
 function createBackupBucket(
   construct: Construct,
   standalone: boolean,
-  props?: BucketProps,
-  uniqueId?: string
+  uniqueId: string,
+  props?: BucketProps
 ): s3.Bucket {
 
   // === Bucket Naming Strategy ===
@@ -487,7 +603,7 @@ function createBackupBucket(
   }
 
   // Create an S3 bucket for backups
-  const bucket = new s3.Bucket(construct, `${standalone ? "BackupBucket" : "IngestBucket"}${uniqueId ? `-${uniqueId}` : ''}`, {
+  const bucket = new s3.Bucket(construct, `${standalone ? "BackupBucket" : "IngestBucket"}-${uniqueId}`, {
     bucketName: bucketName,
     removalPolicy: standalone ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
     autoDeleteObjects: !standalone,
@@ -575,7 +691,7 @@ function createDataSync(
   originBucket: s3.Bucket,
   targetBucket: s3.IBucket,
   props: DataSyncProps,
-  uniqueId?: string
+  uniqueId: string
 ): {
   dataSyncTask: datasync.CfnTask;
   dataSyncRole: iam.Role;
@@ -584,13 +700,13 @@ function createDataSync(
   const targetFolder = props.dataSyncTargetFolder || originBucket.bucketName;
 
   // Create CloudWatch Log Group for DataSync task logging
-  const logGroup = new logs.LogGroup(construct, `DataSyncLogGroup${uniqueId ? `-${uniqueId}` : ''}`, {
-    logGroupName: `/aws/datasync/task/${originBucket.bucketName}-to-${targetBucket.bucketName}${uniqueId ? `-${uniqueId}` : ''}`,
+  const logGroup = new logs.LogGroup(construct, `DataSyncLogGroup-${uniqueId}`, {
+    logGroupName: `/aws/datasync/task/${originBucket.bucketName}-to-${targetBucket.bucketName}-${uniqueId}`,
     retention: logs.RetentionDays.ONE_MONTH,
     removalPolicy: cdk.RemovalPolicy.DESTROY,
   });
 
-  const dataSyncRole = new iam.Role(construct, `DataSyncRole${uniqueId ? `-${uniqueId}` : ''}`, {
+  const dataSyncRole = new iam.Role(construct, `DataSyncRole-${uniqueId}`, {
     assumedBy: new iam.ServicePrincipal("datasync.amazonaws.com", {
       conditions: {
         ArnLike: {
@@ -648,7 +764,7 @@ function createDataSync(
   );
 
   // Create source S3 location for DataSync
-  const sourceS3Location = new datasync.CfnLocationS3(construct, `SourceS3Location${uniqueId ? `-${uniqueId}` : ''}`, {
+  const sourceS3Location = new datasync.CfnLocationS3(construct, `SourceS3Location-${uniqueId}`, {
     s3BucketArn: originBucket.bucketArn,
     s3Config: {
       bucketAccessRoleArn: dataSyncRole.roleArn,
@@ -656,7 +772,7 @@ function createDataSync(
   });
 
   // Create the target S3 location for DataSync, to be able to define the s3 subdirectory
-  const targetS3location = new datasync.CfnLocationS3(construct, `TargetS3Location${uniqueId ? `-${uniqueId}` : ''}`, {
+  const targetS3location = new datasync.CfnLocationS3(construct, `TargetS3Location-${uniqueId}`, {
     s3BucketArn: targetBucket.bucketArn,
     subdirectory: targetFolder,
     s3Config: {
@@ -680,7 +796,7 @@ function createDataSync(
     };
   }
 
-  const dataSyncTask = new datasync.CfnTask(construct, `DataSyncTask${uniqueId ? `-${uniqueId}` : ''}`, {
+  const dataSyncTask = new datasync.CfnTask(construct, `DataSyncTask-${uniqueId}`, {
     sourceLocationArn: sourceS3Location.attrLocationArn,
     destinationLocationArn: targetS3location.attrLocationArn,
     name: `transfer ${originBucket.bucketName} to ${targetBucket.bucketName}/${targetFolder}`,
@@ -718,16 +834,16 @@ function createDataSync(
 function createBackupUser(
   construct: Construct,
   bucket: s3.IBucket,
+  uniqueId: string,
   folderName?: string, //for direct upload
-  props?: iamUserProps,
-  uniqueId?: string
+  props?: IamUserProps
 ): { user: iam.User; accessKey: iam.CfnAccessKey | undefined } {
   // Create an IAM user to access the backup bucket
-  const user = new iam.User(construct, `BackupUser${uniqueId ? `-${uniqueId}` : ''}`, {
-    userName: props?.userName || `backup-user-${bucket.bucketName}${uniqueId ? `-${uniqueId}` : ''}`,
+  const user = new iam.User(construct, `BackupUser-${uniqueId}`, {
+    userName: props?.userName || `backup-user-${bucket.bucketName}-${uniqueId}`,
   });
 
-  const accessKey = props?.createAccessKey ? new iam.CfnAccessKey(construct, `BackupUserAccessKey${uniqueId ? `-${uniqueId}` : ''}`, {
+  const accessKey = props?.createAccessKey ? new iam.CfnAccessKey(construct, `BackupUserAccessKey-${uniqueId}`, {
     userName: user.userName,
     serial: props?.keySerial, // Serial number for the access key, can be used for rotation
   }) : undefined;

@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Update Docs After Task",
+  "description": "After a spec task completes, reviews the changes made and updates relevant documentation (README.md and docs/ folder) if the task introduced user-facing changes to configuration, run modes, media handling, architecture, transport behavior, or logging.",
+  "version": "1",
+  "when": {
+    "type": "postTaskExecution"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A spec task just completed. Review what changed and determine if any user-facing documentation needs updating. Check README.md and the docs/ folder (docs/configuration.md, docs/architecture.md, docs/media-handling.md, docs/transport.md, docs/logging.md). Only update docs if the task introduced changes that affect: configuration options, CLI flags, run modes, media handling behavior, pipeline architecture, transport/rate-limiting behavior, logging output, or file organization. Skip documentation updates for purely internal refactors, test-only changes, or bugfixes that don't change observable behavior. When updating, keep the existing style and tone — concise, developer-oriented, no fluff."
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "app": "npx ts-node lib/index.ts",
+  "versionReporting": false,
+  "context": {
+    "cli-telemetry": false
+  }
+}

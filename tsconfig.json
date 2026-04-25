@@ -1,12 +1,18 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "outDir": "dist",
+    "rootDir": "lib",
+    "module": "Node16",
+    "moduleResolution": "node16",
     "lib": [
       "es2022"
     ],
+    "esModuleInterop": true,
     "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "isolatedModules": true,
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -16,16 +22,19 @@
     "noUnusedParameters": false,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": false,
-    "inlineSourceMap": true,
-    "inlineSources": true,
     "experimentalDecorators": true,
-    "strictPropertyInitialization": false,
-    "typeRoots": [
-      "./node_modules/@types"
-    ]
+    "strictPropertyInitialization": true,
+    "skipLibCheck": true,
+    "noEmitOnError": true
   },
+  "include": [
+    "lib/**/*"
+  ],
   "exclude": [
     "node_modules",
-    "cdk.out"
+    "test",
+    "dist",
+    "cdk.out",
+    "*.d.ts"
   ]
 }

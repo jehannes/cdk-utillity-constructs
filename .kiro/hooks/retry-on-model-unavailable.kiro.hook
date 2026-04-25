@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Retry on Model Unavailable",
+  "description": "Automatically retries the last action when the agent stops due to model availability issues (rate limits, capacity errors, timeouts)",
+  "version": "1",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "If the previous execution failed due to model availability issues (rate limit, capacity error, timeout, or similar transient errors), please retry the last task. If the execution completed successfully or failed for other reasons, do nothing."
+  }
+}

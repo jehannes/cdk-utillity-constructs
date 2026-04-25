@@ -1,0 +1,44 @@
+# Source files
+src/
+tests/
+*.test.ts
+*.test.js
+
+# Build artifacts (keep dist/)
+.jsii
+lib/
+coverage/
+
+# Development files
+.git/
+.github/
+node_modules/
+*.tgz
+build.sh
+jest.config.js
+tsconfig.json
+.jsiirc.json
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.production
+
+
+# Include .jsii and .jsii.gz
+!.jsii
+!.jsii.gz
