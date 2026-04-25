@@ -44,7 +44,7 @@ jobs:
           if [ "$CURRENT_VERSION" -eq 0 ]; then
             VERSION=1
           else
-            VERSION=$CURRENT_VERSION
+            VERSION=$((CURRENT_VERSION + 1))
           fi
 
           PR_NUMBER="${{ github.event.pull_request.number }}"
