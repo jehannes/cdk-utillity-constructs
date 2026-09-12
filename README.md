@@ -1,5 +1,24 @@
 # CDK Utility Constructs
 
+> [!WARNING]
+> **Archived and unmaintained.** This library was never put to use, and both constructs
+> have defects that make their primary paths unusable. Don't install it.
+>
+> - **`CloudFrontForLambda` cannot synthesize on its default path.** The ACM certificate is
+>   requested for the bare domain segment (`api`) instead of the full name
+>   (`api.example.com`), so CDK rejects it as not authoritative for the hosted zone.
+>   Supplying your own us-east-1 certificate through the `certificate` prop is the only
+>   path that synthesizes.
+> - **The release tarball is empty.** The `cdk-utility-constructs-vN.tgz` asset advertised
+>   in every GitHub Release contains no compiled code — only `package.json`, `README.md`,
+>   and `LICENSE.md`. The complete package is the `*.jsii.tgz` attached alongside it.
+>
+> Both constructs were generalized out of smaller projects without a second use site to
+> validate the abstraction. The remaining findings, including a duplicated CloudFront
+> origin access control and a bucket-naming bug, are recorded in
+> `.kiro/steering/learnings.md`. Everything below this banner is the original
+> documentation, left uncorrected.
+
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 This is a store of reusable AWS CDK constructs for things I wanted to make easier to deploy, or easier to deploy repeatedly, 
